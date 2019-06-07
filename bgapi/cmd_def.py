@@ -16,6 +16,9 @@ class ReturnCodeLookupDict(object):
 
 RESULT_CODE = ReturnCodeLookupDict({
    0x0000: "OK",
+   0x0101: "Invalid GATT connection handle",
+   0x0102: "Waiting response from GATT server",
+   0x0103: "GATT connection timeout",
    0x0180: "Invalid Parameter",
    0x0181: "Device in Wrong State",
    0x0182: "Out Of Memory",
@@ -28,6 +31,18 @@ RESULT_CODE = ReturnCodeLookupDict({
    0x0189: "Invalid License Key",
    0x018A: "Command Too Long",
    0x018B: "Out of Bounds",
+   0x018C: "Unspecified",
+   0x018D: "Hardware failure",
+   0x018E: "Internal buffers full",
+   0x018D: "Disconnected",
+   0x0190: "Too many requests",
+   0x0191: "Not supported",
+   0x0192: "Bonding does not exist",
+   0x0193: "Error using crypto functions",
+   0x0194: "Data corrupted",
+   0x0195: "Command incomplete",
+   0x0196: "Feature or subsystem not initialized",
+   0x0197: "Invalid sync handle",
    0x0205: "Authentication Failure",
    0x0206: "Pin Or Key Missing",
    0x0207: "Memory Capacity Exceeded",
@@ -72,6 +87,10 @@ RESULT_CODE = ReturnCodeLookupDict({
    0x0410: "Unsupported Group Type",
    0x0411: "Insufficient Resources",
    0x0480: "Application Error Codes",
+   0x0501: "PS store full",
+   0x0502: "PS key not found",
+   0x0503: "I2C ack missing",
+   0x0504: "I2C timeout"
    })
 
 
