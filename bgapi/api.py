@@ -347,6 +347,9 @@ class BlueGigaAPI(object):
             elif packet_command == 0x08:
                 type, index, netkey_index = struct.unpack('<BHH', rx_payload[:5])
                 callbacks.ble_evt_mesh_node_key_added(type, index, netkey_index)
+            elif packet_command == 0x09:
+                mesh_node_config_state, element_address, vendor_id, model_id = struct.unpack('<BHHH', rx_payload[:7])
+                callbacks.ble_evt_mesh_node_model_config_changed(mesh_node_config_state, element_address, vendor_id, model_id)
             else:
                 logger.error('Unknown event ID 0x%02x for event in class Mesh Node' % packet_command)
         else:
@@ -645,6 +648,18 @@ class BlueGigaCallbacks(object):
                 key_type_str='Unknown'
         logger.info("EVT-Mesh Node Key Added - Type:%s - Index:%d" % (key_type_str, index) + netkey_index_str)
     
+    def ble_evt_mesh_node_model_config_changed(self, mesh_node_config_state, element_address, vendor_id, model_id):
+        if mesh_node_config_state == 0x00:
+            config_state_str='Model application key bindings'
+        elif mesh_node_config_state == 0x01:
+            config_state_str='Model publication parameters'
+        elif mesh_node_config_state == 0x02:
+            config_state_str='Model subscription list'
+        else:
+            config_state_str='Unknown'
+            logger.error('Unknown Mesh Node Config State: %02X' % (mesh_node_config_state))
+        logger.info("EVT-Mesh Node Model Config Changed - Config State:%s - Element Address:%02X - Vendor ID:%02X - Model ID:%02X" % (config_state_str, element_address, vendor_id, model_id))
+        
     def ble_evt_system_debug(self, data):
         logger.info("EVT-System Debug:", data)
 
