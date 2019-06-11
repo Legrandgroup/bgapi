@@ -336,11 +336,16 @@ class BlueGigaAPI(object):
             if packet_command == 0x00:
                 provisioned, address, ivi = struct.unpack('<BHI', rx_payload[:7])
                 callbacks.ble_evt_mesh_node_initialized(provisioned, address, ivi)
+            elif packet_command == 0x01:
+                pass
             elif packet_command == 0x06:
                 result = struct.unpack('<H', rx_payload[:2])
                 callbacks.ble_evt_mesh_node_provisioning_started(result)
+            elif packet_command == 0x08:
+                type, index, netkey_index = struct.unpack('<BHH', rx_payload[:5])
+                callbacks.ble_evt_mesh_node_key_added(type, index, netkey_index)
             else:
-                logger.error('Unknown event ID 0x%02x for event in class System' % packet_command)
+                logger.error('Unknown event ID 0x%02x for event in class Mesh Node' % packet_command)
         else:
             logger.error('Unknown event class 0x%02x' % packet_class)
 
@@ -620,6 +625,19 @@ class BlueGigaCallbacks(object):
     
     def ble_evt_mesh_node_provisioning_started(self, result):
         logger.info("EVT-Mesh Node Provisionning Started - Result:%s" % (RESULT_CODE[result]))
+    
+    def ble_evt_mesh_node_key_added(self, type, index, netkey_index):
+        if type == 0x00:
+            key_type_str='Network'
+            netkey_index_str = ''
+        else:
+            netkey_index_str = " - Netkey Index:%d" % (netkey_index)
+            if type == 0x01:
+                key_type_str='Application'
+            else:
+                logger.error('Unknown key type in event: %d', type)
+                key_type_str='Unknown'
+        logger.info("EVT-Mesh Node Key Added - Type:%s - Index:%d" % (key_type_str, index) + netkey_index_str)
     
     def ble_evt_system_debug(self, data):
         logger.info("EVT-System Debug:", data)
