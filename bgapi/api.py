@@ -339,7 +339,8 @@ class BlueGigaAPI(object):
                 provisioned, address, ivi = struct.unpack('<BHI', rx_payload[:7])
                 callbacks.ble_evt_mesh_node_initialized(provisioned, address, ivi)
             elif packet_command == 0x01:
-                pass
+                iv_index, address = struct.unpack('<IH', rx_payload[:6])
+                callbacks.ble_evt_mesh_node_provisioned(iv_index, address)
             elif packet_command == 0x06:
                 result = struct.unpack('<H', rx_payload[:2])
                 callbacks.ble_evt_mesh_node_provisioning_started(result)
@@ -625,8 +626,11 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-Mesh Node Initialized - Provisioned:%d - Primary Element Unicast Address:%d - IV index:%d" %
                     (provisioned, address, ivi))
     
+    def ble_evt_mesh_node_provisioned(self, iv_index, address):
+        logger.info("EVT-Mesh Node Provisioned - IV index:%d - My primary address:%02x" % (iv_index, address)
+    
     def ble_evt_mesh_node_provisioning_started(self, result):
-        logger.info("EVT-Mesh Node Provisionning Started - Result:%s" % (RESULT_CODE[result]))
+        logger.info("EVT-Mesh Node Provisioning Started - Result:%s" % (RESULT_CODE[result]))
     
     def ble_evt_mesh_node_key_added(self, type, index, netkey_index):
         if type == 0x00:
