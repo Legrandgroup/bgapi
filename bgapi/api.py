@@ -275,6 +275,12 @@ class BlueGigaAPI(object):
                 logger.info('RSP-Gatt Server Write Attribute Value [%s]' % (RESULT_CODE[result]))
             else:
                 logger.error('Unknown response message ID 0x%02x class Generic Attribute Profile Server' % packet_command)
+        elif packet_class == 0x0d:  # Message class: Persistent Store
+            if packet_command == 0x01:
+                result = struct.unpack('<H', rx_payload[:2])[0]
+                logger.info('RSP-Flash PS Erase All [%s]' % (RESULT_CODE[result]))
+            else:
+                logger.error('Unknown response message ID 0x%02x class Persistent Store' % packet_command)
         elif packet_class == 0x14:  # Message class: Mesh Node
             if packet_command == 0x00:
                 result = struct.unpack('<H', rx_payload[:2])[0]
@@ -306,7 +312,7 @@ class BlueGigaAPI(object):
                 logger.error('Unknown event ID 0x%02x for event in class Generic Access Profile' % packet_command)
         elif packet_class == 0x08:  # Message class: Connection Management
             if packet_command == 0x00:
-                address, address_type, master, connection, bonding, advertiser = struct.unpack('<B6sBBBBB', rx_payload[:12])
+                address, address_type, master, connection, bonding, advertiser = struct.unpack('<6sBBBBB', rx_payload[:11])
                 callbacks.ble_evt_connection_opened(address=address, address_type=address_type, master=master, connection=connection, bonding=bonding, advertiser=advertiser)
             elif packet_command == 0x01:
                 reason, connection = struct.unpack('<HB', rx_payload[:3])
@@ -613,7 +619,7 @@ class BlueGigaCallbacks(object):
                     (provisioned, address, ivi))
     
     def ble_evt_mesh_node_provisioning_started(self, result):
-        logger.info("EVT-Mesh Node Provisionning Started - Result:%d" % (RESULT_CODE[result]))
+        logger.info("EVT-Mesh Node Provisionning Started - Result:%s" % (RESULT_CODE[result]))
     
     def ble_evt_system_debug(self, data):
         logger.info("EVT-System Debug:", data)
