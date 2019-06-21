@@ -283,7 +283,7 @@ class BlueGigaAPI(object):
                 logger.info('RSP-Flash PS Dump [%s]' % (RESULT_CODE[result]))
             elif packet_command == 0x01:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Flash PS D All [%s]' % (RESULT_CODE[result]))
+                logger.info('RSP-Flash PS Erase All [%s]' % (RESULT_CODE[result]))
             elif packet_command == 0x03:
                 result, key_len = struct.unpack('<HB', rx_payload[:3])
                 key_value = struct.unpack('<' + str(key_len) + 's', rx_payload[3:3+key_len])[0]
@@ -369,6 +369,14 @@ class BlueGigaAPI(object):
                 callbacks.ble_evt_mesh_node_model_config_changed(mesh_node_config_state, element_address, vendor_id, model_id)
             else:
                 logger.error('Unknown event ID 0x%02x for event in class Mesh Node' % packet_command)
+        elif packet_class == 0x1f:    # Message class: Bluetooth Mesh Generic Server Model
+            if packet_command == 0x00:
+                model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, len = struct.unpack('<HHHHHIHHBB', rx_payload[:20])
+                len = struct.unpack('<HB', rx_payload[:3])
+                value = rx_payload[20:20+len]
+                callbacks.ble_evt_mesh_generic_server_client_request(model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, value)
+            else:
+                logger.error('Unknown event ID 0x%02x for event in class Bluetooth Mesh Generic Server Model' % packet_command)
         else:
             logger.error('Unknown event class 0x%02x' % packet_class)
 
@@ -432,7 +440,7 @@ class BlueGigaCallbacks(object):
         logger.info("RSP-Flash PS Save: [%s]" %  RESULT_CODE[result])
 
     def ble_rsp_flash_ps_load(self, result, value):
-        logger.info("RSP-Flash PS Load: [%s]" %  (RESULT_CODE[result]))
+        logger.info("RSP-Flash PS Load: [%s] - Value:%s" %  (RESULT_CODE[result], hexlify(value[::-1]).decode('ascii').upper()))
 
     def ble_rsp_flash_ps_erase(self):
         logger.info("RSP-Flash PS Erase")
@@ -676,7 +684,37 @@ class BlueGigaCallbacks(object):
             config_state_str='Unknown'
             logger.error('Unknown Mesh Node Config State: %02X' % (mesh_node_config_state))
         logger.info("EVT-Mesh Node Model Config Changed - Config State:%s - Element Address:%02X - Vendor ID:%02X - Model ID:%02X" % (config_state_str, element_address, vendor_id, model_id))
-        
+    
+    def ble_evt_mesh_generic_server_client_request(self, model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, value):
+        if transition != 0:
+            transition_str=' - Transition time:%dms' % (transition, )
+        else:
+            transition_str=''
+        if delay != 0:
+            delay_str=' - Delay:%dms' % (delay, )
+        else:
+            delay_str=''
+        flags_str=''
+        if flags & 1:
+            flags_str+='Nonrelayed'
+        if flags & 2:
+            if flags!='':
+                flags_str+='|'
+            flags_str+='Response required'
+        if flags_str != '':
+            flags_str = ' - Flags:[' + flags_str + ']'
+        if type != 0x00:
+            type_str = ' - Type:%02X' % (type, )
+        else:
+            type_str = ''
+        logger.info("EVT-Mesh Generic Server Client Request - Server Model ID:%04X - Element Index:%d" % (model_id, elem_index) +
+                    " - Client Address:%04X - Server Address:%04X - Application Key Index:%d" % (client_address, server_address, appkey_index) +
+                    transition_str +
+                    delay_str +
+                    flags_str +
+                    type_str +
+                    " - Value:%s" % (hexlify(value[::-1]).decode('ascii').upper(), ))
+    
     def ble_evt_system_debug(self, data):
         logger.info("EVT-System Debug:", data)
 
