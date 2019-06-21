@@ -99,12 +99,14 @@ class BlueGigaAPI(object):
         self.send_command(0x1f, 0x04)
     def ble_cmd_gatt_server_write_attribute_value(self, attribute, offset, value):
         self.send_command(0x0a, 0x02, struct.pack('<HHB' + str(len(value)) + 's', attribute, offset, len(value), value), 0x05)
+    def ble_cmd_flash_ps_dump(self):
+        self.send_command(0x0d, 0x00)
     def ble_cmd_flash_ps_erase_all(self):
         self.send_command(0x0d, 0x01)
     def ble_cmd_flash_ps_save(self, key, value):
         self.send_command(0x0d, 0x02, struct.pack('<HB' + str(len(value)) + 's', key, len(value), value))
     def ble_cmd_flash_ps_load(self, key):
-        self.send_command(0x0d, 0x03, struct.pack('<H', key))
+        self.send_command(0x0d, 0x03, struct.pack('<H', key), 0x02)
     def ble_cmd_flash_ps_erase(self, key):
         self.send_command(0x0d, 0x04, struct.pack('<H', key))
     def ble_cmd_flash_erase_page(self, page):
@@ -276,9 +278,17 @@ class BlueGigaAPI(object):
             else:
                 logger.error('Unknown response message ID 0x%02x class Generic Attribute Profile Server' % packet_command)
         elif packet_class == 0x0d:  # Message class: Persistent Store
-            if packet_command == 0x01:
+            if packet_command == 0x00:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Flash PS Erase All [%s]' % (RESULT_CODE[result]))
+                logger.info('RSP-Flash PS Dump [%s]' % (RESULT_CODE[result]))
+            elif packet_command == 0x01:
+                result = struct.unpack('<H', rx_payload[:2])[0]
+                logger.info('RSP-Flash PS D All [%s]' % (RESULT_CODE[result]))
+            elif packet_command == 0x03:
+                result, key_len = struct.unpack('<HB', rx_payload[:3])
+                key_value = struct.unpack('<' + str(key_len) + 's', rx_payload[3:3+key_len])[0]
+                key_value_str = ':'.join([ '%02X' % ord(b) for b in key_value ])
+                logger.info('RSP-Flash PS Load: Key Value:[%s] [%s]' % (key_value_str, RESULT_CODE[result]))
             else:
                 logger.error('Unknown response message ID 0x%02x class Persistent Store' % packet_command)
         elif packet_class == 0x14:  # Message class: Mesh Node
@@ -329,11 +339,18 @@ class BlueGigaAPI(object):
                 logger.error('Unknown event ID 0x%02x for event in class Connection Management' % packet_command)
         elif packet_class == 0x0a:    # Message class: Generic Attribute Profile Server
             if packet_command == 0x02:  # evt_gatt_server_user_write_request
-                connection, characteristic, att_opcode, offset = struct.unpack('<BHBH', rx_payload[:6])
-                value = rx_payload[6:]
+                connection, characteristic, att_opcode, offset, len = struct.unpack('<BHBHB', rx_payload[:7])
+                value = rx_payload[6:6+len]
                 callbacks.ble_evt_gatt_server_user_write_request(connection, characteristic, att_opcode, offset, value)
             else:
                 logger.error('Unknown event ID 0x%02x for event in class Generic Attribute Profile Server' % packet_command)
+        elif packet_class == 0x0d:    # Message class: Persistent Store
+            if packet_command == 0x00:  # evt_gatt_server_user_write_request
+                key, len = struct.unpack('<HB', rx_payload[:3])
+                value = rx_payload[3:3+len]
+                callbacks.ble_evt_flash_ps_key(key, value)
+            else:
+                logger.error('Unknown event ID 0x%02x for event in class Persistent Store' % packet_command)
         elif packet_class == 0x14:    # Message class: Mesh Node
             if packet_command == 0x00:
                 provisioned, address, ivi = struct.unpack('<BHI', rx_payload[:7])
@@ -630,7 +647,7 @@ class BlueGigaCallbacks(object):
                     (provisioned, address, ivi))
     
     def ble_evt_mesh_node_provisioned(self, iv_index, address):
-        logger.info("EVT-Mesh Node Provisioned - IV index:%d - My primary address:%02x" % (iv_index, address))
+        logger.info("EVT-Mesh Node Provisioned - IV index:%d - My primary address:%04x" % (iv_index, address))
     
     def ble_evt_mesh_node_provisioning_started(self, result):
         logger.info("EVT-Mesh Node Provisioning Started - Result:%s" % (RESULT_CODE[result]))
@@ -676,7 +693,7 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-System No License Key")
 
     def ble_evt_flash_ps_key(self, key, value):
-        logger.info("EVT-Flash PS Key")
+        logger.info("EVT-Flash PS Key - Key:%04x - Value:%s" % (key, hexlify(value).decode('ascii').upper()))
 
     def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
         logger.info("EVT-Attributes Value - Connection:%d - Reason:[%s] - Handle:%d - Offset:%d - " % (connection, ATTRIBUTE_CHANGE_REASON[reason], handle, offset) + \
@@ -689,7 +706,9 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-Attributes Status - Handle:%d - Flags:[%s]" % (handle, ATTRIBUTE_STATUS_FLAGS[flags]))
 
     def ble_evt_connection_opened(self, address, address_type, master, connection, bonding, advertiser):
-        logger.info("EVT-Connection Opened - Address:%s - " % (hexlify(address[::-1]).decode('ascii').upper(), ) +
+        result = address[::-1]
+        result = ':'.join([ '%02X' % ord(b) for b in result ])
+        logger.info("EVT-Connection Opened - Address:[%s] - " % (result, ) +
                     "Address Type:%d - Master:%d - Connection:%d - Bonding:%d - Advertiser:%d" % (address_type, master, connection, bonding, advertiser))
 
     def ble_evt_connection_closed(self, reason, connection):
