@@ -32,10 +32,14 @@ class BleMeshNode(object):
     
     def ble_rsp_system_reset(self):
         self._logger.info("RSP-System Reset")
+    
+    def ble_evt_system_boot(self, major, minor, patch, build, bootloader, hw, hash):
+        self._logger.info("EVT-System Boot - Version:%d.%d.%d.%d - Bootloader Version:%d - hw:%d - Version hash:%s" %
+                    (major, minor, patch, build, bootloader, hw, hex(hash)))
         with self._state_lock:
             self._state=2
             self._modem_init_done.set()
-
+    
     def ble_rsp_system_hello(self):
         self._logger.info("RSP-System Hello")
 
@@ -298,10 +302,6 @@ class BleMeshNode(object):
     def ble_rsp_test_debug(self, output):
         self._logger.info("RSP-Test Debug")
 
-    def ble_evt_system_boot(self, major, minor, patch, build, bootloader, hw, hash):
-        self._logger.info("EVT-System Boot - Version:%d.%d.%d.%d - Bootloader Version:%d - hw:%d - Version hash:%s" %
-                    (major, minor, patch, build, bootloader, hw, hex(hash)))
-    
     def ble_evt_mesh_node_initialized(self, provisioned, address, ivi):
         self._logger.info("EVT-Mesh Node Initialized - Provisioned:%d - Primary Element Unicast Address:%d - IV index:%d" %
                     (provisioned, address, ivi))
@@ -496,6 +496,8 @@ def example_ble_mesh_node():
     
     btmesh=BleMeshNode(port=PORT, baud=57600)
     btmesh.modem_reset()
+    
+    logger.info('Execution finished')
 
 if __name__ == "__main__":
     example_ble_mesh_node()
