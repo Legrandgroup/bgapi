@@ -49,8 +49,11 @@ class BlueGigaAPI(object):
             
             try:
                 self.parse_bgapi_packet(packet)
-            except Exception:
-                logger.exception("Error parsing bgapi packet.")
+            except Exception as e:
+                logger.error('Error parsing bgapi packet')
+                ex_type, ex, tb = sys.exc_info()
+                traceback.print_tb(tb)
+                raise e
 
     def start_daemon(self):
         """
