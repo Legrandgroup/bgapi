@@ -286,7 +286,7 @@ class BlueGigaAPI(object):
                 logger.info('RSP-Flash PS Dump [%s]' % (RESULT_CODE[result]))
             elif packet_command == 0x01:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Flash PS Erase All [%s]' % (RESULT_CODE[result]))
+                callbacks.ble_rsp_flash_ps_erase_all(result)
             elif packet_command == 0x03:
                 result, key_len = struct.unpack('<HB', rx_payload[:3])
                 key_value = struct.unpack('<' + str(key_len) + 's', rx_payload[3:3+key_len])[0]
@@ -442,11 +442,11 @@ class BlueGigaCallbacks(object):
     def ble_rsp_flash_ps_dump(self):
         logger.info("RSP-Flash PS Dump")
 
-    def ble_rsp_flash_ps_erase_all(self):
-        logger.info("RSP-Flash PS Erase All")
+    def ble_rsp_flash_ps_erase_all(self, result):
+        self._logger.info('RSP-Flash PS Erase All [%s]' % (RESULT_CODE[result]))
 
     def ble_rsp_flash_ps_save(self, result):
-        logger.info("RSP-Flash PS Save: [%s]" %  RESULT_CODE[result])
+        logger.info("RSP-Flash PS Save: [%s]" % (RESULT_CODE[result]))
 
     def ble_rsp_flash_ps_load(self, result, value):
         logger.info("RSP-Flash PS Load: [%s] - Value:%s" %  (RESULT_CODE[result], hexlify(value[::-1]).decode('ascii').upper()))

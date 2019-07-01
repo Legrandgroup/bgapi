@@ -4,6 +4,8 @@ import bgapi.api
 import threading
 import sys
 
+from bgapi.cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
+
 #PORT = "COM3"
 PORT = "/dev/ttyACM0"
 
@@ -14,6 +16,7 @@ class BleMeshNode(object):
         self._state=0
         self._state_lock = threading.Lock()       # This mutex protects access to attribute state
         self._modem_init_done = threading.Event()
+        self._flash_erase_done = threading.Event()
         if bgapi_handler is not None:
             self._bgapi=bgapi_handler
         else:
@@ -26,9 +29,16 @@ class BleMeshNode(object):
             self._state=1
             self._modem_init_done.clear()
             self._bgapi.ble_cmd_system_reset(0)
-        if not self._modem_init_done.wait(timeout):   # Give 5s for modem init to complete
+        if not self._modem_init_done.wait(timeout):
             self._logger.error('Modem reset timed out')
             raise Exception('Modem reset timed out')
+    
+    def flash_erase(self, timeout=1):
+        self._flash_erase_done.clear()
+        self._bgapi.ble_cmd_flash_ps_erase_all()
+        if not self._flash_erase_done.wait(timeout):
+            self._logger.error('Flash erase timed out')
+            raise Exception('Flash erase timed out')
     
     def ble_rsp_system_reset(self):
         self._logger.info("RSP-System Reset")
@@ -89,8 +99,12 @@ class BleMeshNode(object):
     def ble_rsp_flash_ps_dump(self):
         self._logger.info("RSP-Flash PS Dump")
 
-    def ble_rsp_flash_ps_erase_all(self):
-        self._logger.info("RSP-Flash PS Erase All")
+    def ble_rsp_flash_ps_erase_all(self, result):
+        self._logger.info('RSP-Flash PS Erase All [%s]' % (RESULT_CODE[result]))
+        if (result==0):
+            self._flash_erase_done.set()
+        else:
+            self._logger.error('Flash erase command failed')
 
     def ble_rsp_flash_ps_save(self, result):
         self._logger.info("RSP-Flash PS Save: [%s]" %  RESULT_CODE[result])
@@ -495,6 +509,7 @@ def example_ble_mesh_node():
     logger=api_logger
     
     btmesh=BleMeshNode(port=PORT, baud=57600)
+    btmesh.flash_erase()
     btmesh.modem_reset()
     
     logger.info('Execution finished')
