@@ -100,6 +100,10 @@ class BlueGigaAPI(object):
         self.send_command(0x14, 0x08, struct.pack('<HB' + str(len(gap_data_type)) + 's', mask, len(gap_data_type), gap_data_type), 0x03)
     def ble_cmd_mesh_generic_server_init(self):
         self.send_command(0x1f, 0x04)
+    def ble_cmd_mesh_generic_server_publish(self, model_id, elem_index, type):
+        self.send_command(0x1f, 0x02, struct.pack('<HHB', model_id, elem_index, type), 0x05)
+    def ble_cmd_mesh_generic_client_publish(self, model_id, elem_index, tid, transition, delay, flags, type, parameter):
+        self.send_command(0x1f, 0x02, struct.pack('<HHBIBBBB' + str(len(parameter)) + 's', model_id, elem_index, tid, transition, delay, flags, type, len(parameter), parameter), 0x05)
     def ble_cmd_gatt_server_write_attribute_value(self, attribute, offset, value):
         self.send_command(0x0a, 0x02, struct.pack('<HHB' + str(len(value)) + 's', attribute, offset, len(value), value), 0x05)
     def ble_cmd_flash_ps_dump(self):

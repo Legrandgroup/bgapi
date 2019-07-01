@@ -3,6 +3,7 @@ import time
 import bgapi.api
 import threading
 import sys
+import struct
 from binascii import hexlify
 
 from bgapi.cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
@@ -525,7 +526,41 @@ def example_ble_mesh_node():
     btmesh=BleMeshNode(port=PORT, baud=57600)
     btmesh.flash_erase()
     btmesh.modem_reset()
+    btmesh.get_bt_address()
     
+    btmesh._bgapi.ble_cmd_gatt_server_write_attribute_value(11, 0, 'fake node') # see app.c#L110 gattdb_device_name==11
+    time.sleep(1)
+    btmesh._bgapi.ble_cmd_mesh_node_set_adv_event_filter(0,'') # see main.c#L284    (was 0x07)
+    time.sleep(1)
+    # Should initialize LEDs then, run mesh_node_init() as done below
+    btmesh._bgapi.ble_cmd_mesh_node_init()
+    time.sleep(1)
+    # After evt_mesh_node_initialized_id,
+    #btmesh._bgapi.ble_cmd_mesh_proxy_init() # Here?
+    #btmesh._bgapi.ble_cmd_mesh_proxy_server_init() # see app.c#L395
+    btmesh._bgapi.ble_cmd_mesh_generic_server_init()
+    time.sleep(1)
+    # Then run gecko_cmd_mesh_node_start_unprov_beaconing(0x3) as done below
+    btmesh._bgapi.ble_cmd_mesh_node_start_unprov_beaconing(1 | 2)
+    logger.info('Loop sending commands in 120s')
+    time.sleep(30)
+    logger.info('Loop sending commands in 90s')
+    time.sleep(30)
+    logger.info('Loop sending commands in 60s')
+    time.sleep(30)
+    logger.info('Loop sending commands in 30s')
+    time.sleep(30)
+    time.sleep(5)
+    logger.info('Loop sending commands')
+    for i in range(0, 5):
+        btmesh._bgapi.ble_cmd_mesh_generic_client_publish(0x1001, 0, i, 1, 0, 0, 0, struct.pack('<B', i%2))
+        time.sleep(15)
+
+    # Will get evt_mesh_node_provisioning_started event
+    # Allows to blink LEDs to show start of provisionning
+    # Will then get either gecko_evt_mesh_node_provisioned_id or gecko_evt_mesh_node_provisioning_failed_id event
+    btmesh._bgapi.t.join()
+
     
     logger.info('Execution finished')
 
