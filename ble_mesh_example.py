@@ -18,6 +18,7 @@ class BleMeshNode(object):
         self._state_lock = threading.Lock()       # This mutex protects access to attribute state
         self._modem_init_done = threading.Event()
         self._flash_erase_done = threading.Event()
+        self._get_bt_address_done = threading.Event()
         if bgapi_handler is not None:
             self._bgapi=bgapi_handler
         else:
@@ -41,6 +42,13 @@ class BleMeshNode(object):
             self._logger.error('Flash erase timed out')
             raise Exception('Flash erase timed out')
     
+    def get_bt_address(self, timeout=1):
+        self._get_bt_address_done.clear()
+        self._bgapi.ble_cmd_system_get_bt_address()
+        if not self._get_bt_address_done.wait(timeout):
+            self._logger.error('Get BT address timed out')
+            #raise Exception('Get BT address timed out')
+    
     def ble_rsp_system_reset(self):
         self._logger.info("RSP-System Reset")
     
@@ -56,6 +64,11 @@ class BleMeshNode(object):
 
     def ble_rsp_system_address_get(self, address):
         self._logger.info("RSP-System Address Get - " + hexlify(address).decode('ascii').upper())
+
+    def ble_rsp_system_get_bt_address(self, address):
+        address = ':'.join([ '%02X' % ord(b) for b in address ])
+        self._logger.info('RSP-Bt Address [%s]' % address)
+        self._get_bt_address_done.set()
 
     def ble_rsp_system_reg_write(self, result):
         self._logger.info("RSP-System Register Write: [%s]" % RESULT_CODE[result])

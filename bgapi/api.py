@@ -269,9 +269,8 @@ class BlueGigaAPI(object):
         elif packet_class == 0x01:  # Message class: System
             if packet_command == 0x03:
                 result = rx_payload[:6]
-                result = result[::-1]
-                result = ':'.join([ '%02X' % ord(b) for b in result ])
-                logger.info('RSP-Bt Public Address [%s]' % result)
+                result = result[::-1]	# Reverse byte order for MAC address
+                callbacks.ble_rsp_system_get_bt_address(result)
             else:
                 logger.error('Unknown response message ID 0x%02x class System' % packet_command)
         elif packet_class == 0x0a:  # Message class: Generic Attribute Profile Server
@@ -398,6 +397,10 @@ class BlueGigaCallbacks(object):
 
     def ble_rsp_system_address_get(self, address):
         logger.info("RSP-System Address Get - " + hexlify(address).decode('ascii').upper())
+
+    def ble_rsp_system_get_bt_address(self, address):
+        address = ':'.join([ '%02X' % ord(b) for b in address ])
+        logger.info('RSP-Bt Address [%s]' % address)
 
     def ble_rsp_system_reg_write(self, result):
         logger.info("RSP-System Register Write: [%s]" % RESULT_CODE[result])
