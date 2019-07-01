@@ -692,7 +692,7 @@ class BlueGigaCallbacks(object):
         else:
             config_state_str='Unknown'
             logger.error('Unknown Mesh Node Config State: %02X' % (mesh_node_config_state))
-        logger.info("EVT-Mesh Node Model Config Changed - Config State:%s - Element Address:%02X - Vendor ID:%02X - Model ID:%02X" % (config_state_str, element_address, vendor_id, model_id))
+        logger.info("EVT-Mesh Node Model Config Changed - Config State:%s - Element Address:%04X - Vendor ID:%02X - Model ID:%02X" % (config_state_str, element_address, vendor_id, model_id))
     
     def ble_evt_mesh_generic_server_client_request(self, model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, value):
         if transition != 0:
