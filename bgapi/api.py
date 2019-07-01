@@ -381,7 +381,7 @@ class BlueGigaAPI(object):
         elif packet_class == 0x1f:    # Message class: Bluetooth Mesh Generic Server Model
             if packet_command == 0x00:
                 model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, len = struct.unpack('<HHHHHIHHBB', rx_payload[:20])
-                len = struct.unpack('<HB', rx_payload[:3])
+                len = struct.unpack('<HB', rx_payload[:3])[0]
                 value = rx_payload[20:20+len]
                 callbacks.ble_evt_mesh_generic_server_client_request(model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, value)
             else:
