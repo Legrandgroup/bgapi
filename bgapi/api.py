@@ -310,6 +310,9 @@ class BlueGigaAPI(object):
             else:
                 logger.error('Unknown response message ID 0x%02x class Mesh Node' % packet_command)
         elif packet_class == 0x1f:  # Message class: Bluetooth Mesh Generic Server Model
+            if packet_command == 0x02:
+                result = struct.unpack('<H', rx_payload[:2])[0]
+                logger.info('RSP-Mesh Generic Client Publish [%s]' % (RESULT_CODE[result]))
             if packet_command == 0x04:
                 result = struct.unpack('<H', rx_payload[:2])[0]
                 logger.info('RSP-Mesh Generic Server Init [%s]' % (RESULT_CODE[result]))
