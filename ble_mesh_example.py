@@ -3,6 +3,7 @@ import time
 import bgapi.api
 import threading
 import sys
+from binascii import hexlify
 
 from bgapi.cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
 
@@ -511,6 +512,7 @@ def example_ble_mesh_node():
     btmesh=BleMeshNode(port=PORT, baud=57600)
     btmesh.flash_erase()
     btmesh.modem_reset()
+    
     
     logger.info('Execution finished')
 
