@@ -715,17 +715,12 @@ class BlueGigaCallbacks(object):
             flags_str+='Response required'
         if flags_str != '':
             flags_str = ' - Flags:[' + flags_str + ']'
-        if type != 0x00:
-            type_str = ' - Type:%02X' % (type, )
-        else:
-            type_str = ''
         logger.info("EVT-Mesh Generic Server Client Request - Server Model ID:%04X - Element Index:%d" % (model_id, elem_index) +
                     " - Client Address:%04X - Server Address:%04X - Application Key Index:%d" % (client_address, server_address, appkey_index) +
                     transition_str +
                     delay_str +
                     flags_str +
-                    type_str +
-                    " - Value:%s" % (hexlify(value[::-1]).decode('ascii').upper(), ))
+                    " - Type:%02X - Value:%s" % (type, hexlify(value[::-1]).decode('ascii').upper()))
     
     def ble_evt_system_debug(self, data):
         logger.info("EVT-System Debug:", data)
