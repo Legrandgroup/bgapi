@@ -23,6 +23,8 @@ class BleMeshNode(object):
         self._mesh_node_init_done = threading.Event()
         self._last_bt_address = None
         self._provisioning_occurred = threading.Event()
+        self._mesh_generic_client_init_done = threading.Event()
+        self._mesh_generic_server_init_done = threading.Event()
         if bgapi_handler is not None:
             self._bgapi=bgapi_handler
         else:
@@ -56,12 +58,30 @@ class BleMeshNode(object):
             self._last_bt_address = None
             return bt_address
     
-    def mesh_node_init(self, timeout=1):
+    def mesh_generic_server_init(self, timeout=1):
+        self._mesh_generic_server_init_done.clear()
+        self._bgapi.ble_cmd_mesh_generic_server_init()
+    
+    def mesh_generic_client_init(self, timeout=1):
+        self._mesh_generic_client_init_done.clear()
+        self._bgapi.ble_cmd_mesh_generic_client_init()
+    
+    def mesh_node_init(self, timeout=1, init_server=True, init_client=True):
         self._mesh_node_init_done.clear()
         self._bgapi.ble_cmd_mesh_node_init()
         if not self._mesh_node_init_done.wait(timeout):
             self._logger.error('Mesh node init timed out')
             raise Exception('Mesh node init timed out')
+        self._mesh_generic_server_init_done.clear()
+        self.mesh_generic_server_init()
+        if not self._mesh_generic_server_init_done.wait(timeout):
+            self._logger.error('Mesh generic server init timed out')
+            raise Exception('Mesh generic server init timed out')
+        self._mesh_generic_client_init_done.clear()
+        self.mesh_generic_client_init()
+        if not self._mesh_generic_client_init_done.wait(timeout):
+            self._logger.error('Mesh generic client init timed out')
+            raise Exception('Mesh generic client init timed out')
     
     def start_advertising_unprovisioned(self):
         self._provisioning_occurred.clear()
@@ -166,6 +186,20 @@ class BleMeshNode(object):
             self._mesh_node_init_done.set()
         else:
             self._logger.error('Mesh node init command failed')
+
+    def ble_rsp_mesh_generic_server_init(self, result):
+        self._logger.info('RSP-Mesh Generic Server Init [%s]' % (RESULT_CODE[result]))
+        if (result==0):
+            self._mesh_generic_server_init_done.set()
+        else:
+            self._logger.error('Mesh generic server init command failed')
+
+    def ble_rsp_mesh_generic_client_init(self, result):
+        self._logger.info('RSP-Mesh Generic Client Init [%s]' % (RESULT_CODE[result]))
+        if (result==0):
+            self._mesh_generic_client_init_done.set()
+        else:
+            self._logger.error('Mesh generic client init command failed')
 
     def ble_rsp_attributes_write(self, result):
         self._logger.info("RSP-Attributes Write: [%s]" %  RESULT_CODE[result])
@@ -569,19 +603,13 @@ def example_ble_mesh_node():
     btmesh=BleMeshNode(port=PORT, baud=57600)
     btmesh.flash_erase()
     btmesh.modem_reset()
-    logger.info('Out Bluetooth addess is:' + str(btmesh.get_bt_address()))
+    logger.info('Our Bluetooth addess is:' + str(btmesh.get_bt_address()))
     
     btmesh._bgapi.ble_cmd_gatt_server_write_attribute_value(11, 0, 'fake node') # see app.c#L110 gattdb_device_name==11
-    time.sleep(1)
+    time.sleep(0.5)
     btmesh._bgapi.ble_cmd_mesh_node_set_adv_event_filter(0,'') # see main.c#L284    (was 0x07)
-    time.sleep(1)
+    time.sleep(0.5)
     btmesh.mesh_node_init()
-    #btmesh._bgapi.ble_cmd_mesh_proxy_init() # Here?
-    #btmesh._bgapi.ble_cmd_mesh_proxy_server_init() # see app.c#L395
-    btmesh._bgapi.ble_cmd_mesh_generic_server_init()
-    time.sleep(1)
-    btmesh._bgapi.ble_cmd_mesh_generic_client_init()
-    time.sleep(1)
     btmesh.start_advertising_unprovisioned()
     logger.info('Waiting to be provisioned...')
     btmesh.wait_provisioned()
