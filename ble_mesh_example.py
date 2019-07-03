@@ -399,6 +399,17 @@ class BleMeshNode(object):
                     type_str +
                     " - Value:%s" % (hexlify(value[::-1]).decode('ascii').upper(), ))
     
+    def ble_evt_mesh_generic_client_server_status(self, model_id, elem_index, client_address, server_address, remaining, flags, type, value):
+        flags_str=''
+        if flags & 1:
+            flags_str+='Nonrelayed'
+        if flags_str != '':
+            flags_str = ' - Flags:[' + flags_str + ']'
+        self._logger.info("EVT-Mesh Generic Client Server Status - Server Model ID:%04X - Element Index:%d" % (model_id, elem_index) +
+                          " - Client Address:%04X - Server Address:%04X - Remaining:%dms" % (client_address, server_address, remaining) +
+                          flags_str +
+                          " - Type:%02X - Value:%s" % (type, hexlify(value[::-1]).decode('ascii').upper()))
+    
     def ble_evt_system_debug(self, data):
         self._logger.info("EVT-System Debug:", data)
 
@@ -542,6 +553,8 @@ def example_ble_mesh_node():
     #btmesh._bgapi.ble_cmd_mesh_proxy_init() # Here?
     #btmesh._bgapi.ble_cmd_mesh_proxy_server_init() # see app.c#L395
     btmesh._bgapi.ble_cmd_mesh_generic_server_init()
+    time.sleep(1)
+    btmesh._bgapi.ble_cmd_mesh_generic_client_init()
     time.sleep(1)
     # Then run gecko_cmd_mesh_node_start_unprov_beaconing(0x3) as done below
     btmesh._bgapi.ble_cmd_mesh_node_start_unprov_beaconing(1 | 2)
