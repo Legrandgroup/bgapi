@@ -691,7 +691,7 @@ class BlueGigaCallbacks(object):
                     (provisioned, address, ivi))
     
     def ble_evt_mesh_node_provisioned(self, iv_index, address):
-        logger.info("EVT-Mesh Node Provisioned - IV index:%d - My primary address:%04x" % (iv_index, address))
+        logger.info("EVT-Mesh Node Provisioned - IV index:%d - My primary address:%04X" % (iv_index, address))
     
     def ble_evt_mesh_node_provisioning_started(self, result):
         logger.info("EVT-Mesh Node Provisioning Started - Result:%s" % (RESULT_CODE[result]))
