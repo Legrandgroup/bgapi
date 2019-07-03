@@ -625,7 +625,7 @@ def example_ble_mesh_node():
     time.sleep(5)
     logger.info('Loop sending commands')
     for i in range(0, 5):
-        btmesh._bgapi.ble_cmd_mesh_generic_client_publish(0x1001, 0, i, 1, 0, 0, 0, struct.pack('<B', i%2))
+        btmesh._bgapi.ble_cmd_mesh_generic_client_publish(0x1000, 0, i, 0, 0, 0, 0, struct.pack('<B', i%2))
         time.sleep(15)
 
     # Will get evt_mesh_node_provisioning_started event
