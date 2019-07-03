@@ -69,6 +69,10 @@ class BleMeshNode(object):
             self._state=2
             self._modem_init_done.set()
     
+    def ble_evt_system_error(self, reason, data):
+        self._logger.info("EVT-System Error - Reason:%s(%04X) - Data:%s" %
+                          (RESULT_CODE[reason], reason, hexlify(data[::-1]).decode('ascii').upper()))
+    
     def ble_rsp_system_hello(self):
         self._logger.info("RSP-System Hello")
 

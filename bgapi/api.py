@@ -339,6 +339,10 @@ class BlueGigaAPI(object):
             if packet_command == 0x00:
                 major, minor, patch, build, bootloader, hw, hash = struct.unpack('<HHHHIHI', rx_payload[:18])
                 callbacks.ble_evt_system_boot(major=major, minor=minor, patch=patch, build=build, bootloader=bootloader, hw=hw, hash=hash)
+            elif packet_command == 0x06:
+                reason, len = struct.unpack('<HB', rx_payload[:3])
+                value = rx_payload[3:3+len]
+                callbacks.ble_evt_system_error(reason=reason, data=value)
             else:
                 logger.error('Unknown event ID 0x%02x for event in class System' % packet_command)
         elif packet_class == 0x03:  # Message class: Generic Access Profile
@@ -685,6 +689,10 @@ class BlueGigaCallbacks(object):
     def ble_evt_system_boot(self, major, minor, patch, build, bootloader, hw, hash):
         logger.info("EVT-System Boot - Version:%d.%d.%d.%d - Bootloader Version:%d - hw:%d - Version hash:%s" %
                     (major, minor, patch, build, bootloader, hw, hex(hash)))
+    
+    def ble_evt_system_error(self, reason, data):
+        logger.info("EVT-System Error - Reason:%s(%04X) - Data:%s" %
+                    (RESULT_CODE[reason], reason, hexlify(data[::-1]).decode('ascii').upper()))
     
     def ble_evt_mesh_node_initialized(self, provisioned, address, ivi):
         logger.info("EVT-Mesh Node Initialized - Provisioned:%d - Primary Element Unicast Address:%d - IV index:%d" %
