@@ -314,12 +314,21 @@ class BlueGigaAPI(object):
         elif packet_class == 0x1f:  # Message class: Bluetooth Mesh Generic Server Model
             if packet_command == 0x02:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Mesh Generic Client Publish [%s]' % (RESULT_CODE[result]))
-            if packet_command == 0x04:
+                logger.info('RSP-Mesh Generic Server Publish [%s]' % (RESULT_CODE[result]))
+            elif packet_command == 0x04:
                 result = struct.unpack('<H', rx_payload[:2])[0]
                 logger.info('RSP-Mesh Generic Server Init [%s]' % (RESULT_CODE[result]))
             else:
-                logger.error('Unknown response message ID 0x%02x class Bluetooth Mesh Generic Server Model' % packet_command)
+                logger.error('Unknown response message ID 0x%02x class Mesh Generic Server Model' % packet_command)
+        elif packet_class == 0x1e:  # Message class: Bluetooth Mesh Generic Client Model
+            if packet_command == 0x02:
+                result = struct.unpack('<H', rx_payload[:2])[0]
+                logger.info('RSP-Mesh Generic Client Publish [%s]' % (RESULT_CODE[result]))
+            elif packet_command == 0x04:
+                result = struct.unpack('<H', rx_payload[:2])[0]
+                logger.info('RSP-Mesh Generic Client Init [%s]' % (RESULT_CODE[result]))
+            else:
+                logger.error('Unknown response message ID 0x%02x class Mesh Generic Client Model' % packet_command)
         else:
             logger.error('Unknown response message class 0x%02x' % packet_class)
 
@@ -386,10 +395,16 @@ class BlueGigaAPI(object):
                 callbacks.ble_evt_mesh_node_model_config_changed(mesh_node_config_state, element_address, vendor_id, model_id)
             else:
                 logger.error('Unknown event ID 0x%02x for event in class Mesh Node' % packet_command)
+        elif packet_class == 0x1e:    # Message class: Bluetooth Mesh Generic Client Model
+            if packet_command == 0x00:
+                model_id, elem_index, client_address, server_address, remaining, flags, type, len = struct.unpack('<HHHHIHBB', rx_payload[:16])
+                value = rx_payload[16:16+len]
+                callbacks.ble_evt_mesh_generic_client_server_status(model_id, elem_index, client_address, server_address, remaining, flags, type, value)
+            else:
+                logger.error('Unknown event ID 0x%02x for event in class Bluetooth Mesh Generic Client Model' % packet_command)
         elif packet_class == 0x1f:    # Message class: Bluetooth Mesh Generic Server Model
             if packet_command == 0x00:
                 model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, len = struct.unpack('<HHHHHIHHBB', rx_payload[:20])
-                len = struct.unpack('<HB', rx_payload[:3])[0]
                 value = rx_payload[20:20+len]
                 callbacks.ble_evt_mesh_generic_server_client_request(model_id, elem_index, client_address, server_address, appkey_index, transition, delay, flags, type, value)
             else:
@@ -731,6 +746,17 @@ class BlueGigaCallbacks(object):
                     flags_str +
                     " - Type:%02X - Value:%s" % (type, hexlify(value[::-1]).decode('ascii').upper()))
     
+    def ble_evt_mesh_generic_client_server_status(self, model_id, elem_index, client_address, server_address, remaining, flags, type, value):
+        flags_str=''
+        if flags & 1:
+            flags_str+='Nonrelayed'
+        if flags_str != '':
+            flags_str = ' - Flags:[' + flags_str + ']'
+        logger.info("EVT-Mesh Generic Client Server Status - Server Model ID:%04X - Element Index:%d" % (model_id, elem_index) +
+                    " - Client Address:%04X - Server Address:%04X - Remaining:%dms" % (client_address, server_address, remaining) +
+                    flags_str +
+                    " - Type:%02X - Value:%s" % (type, hexlify(value[::-1]).decode('ascii').upper()))
+
     def ble_evt_system_debug(self, data):
         logger.info("EVT-System Debug:", data)
 
