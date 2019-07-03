@@ -20,6 +20,7 @@ class BleMeshNode(object):
         self._modem_init_done = threading.Event()
         self._flash_erase_done = threading.Event()
         self._get_bt_address_done = threading.Event()
+        self._provisioning_occurred = threading.Event()
         if bgapi_handler is not None:
             self._bgapi=bgapi_handler
         else:
@@ -50,8 +51,13 @@ class BleMeshNode(object):
             self._logger.error('Get BT address timed out')
             #raise Exception('Get BT address timed out')
     
-    def wait_provisioned(self, timeout=0):
-        pass
+    def start_advertising_unprovisioned(self):
+        self._provisioning_occurred.clear()
+        self._bgapi.ble_cmd_mesh_node_start_unprov_beaconing(1 | 2)
+    
+    def wait_provisioned(self, timeout=None):
+        if not self._provisioning_occurred.wait(timeout):
+            self._logger.error('Wait for provisioned timed out')
     
     def ble_rsp_system_reset(self):
         self._logger.info("RSP-System Reset")
@@ -340,6 +346,7 @@ class BleMeshNode(object):
     
     def ble_evt_mesh_node_provisioned(self, iv_index, address):
         self._logger.info("EVT-Mesh Node Provisioned - IV index:%d - My primary address:%04x" % (iv_index, address))
+        self._provisioning_occurred.set()
     
     def ble_evt_mesh_node_provisioning_started(self, result):
         self._logger.info("EVT-Mesh Node Provisioning Started - Result:%s" % (RESULT_CODE[result]))
@@ -546,7 +553,6 @@ def example_ble_mesh_node():
     time.sleep(1)
     btmesh._bgapi.ble_cmd_mesh_node_set_adv_event_filter(0,'') # see main.c#L284    (was 0x07)
     time.sleep(1)
-    # Should initialize LEDs then, run mesh_node_init() as done below
     btmesh._bgapi.ble_cmd_mesh_node_init()
     time.sleep(1)
     # After evt_mesh_node_initialized_id,
@@ -556,10 +562,9 @@ def example_ble_mesh_node():
     time.sleep(1)
     btmesh._bgapi.ble_cmd_mesh_generic_client_init()
     time.sleep(1)
-    # Then run gecko_cmd_mesh_node_start_unprov_beaconing(0x3) as done below
-    btmesh._bgapi.ble_cmd_mesh_node_start_unprov_beaconing(1 | 2)
+    btmesh.start_advertising_unprovisioned()
     logger.info('Waiting to be provisioned...')
-    btmesh.wait_provisioned(timeout=0)
+    btmesh.wait_provisioned()
     logger.info('We have just been provisioned!')
     logger.info('Loop sending commands in 120s')
     time.sleep(30)
