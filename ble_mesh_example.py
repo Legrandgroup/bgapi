@@ -392,12 +392,12 @@ class BleMeshNode(object):
         else:
             type_str = ''
         self._logger.info("EVT-Mesh Generic Server Client Request - Server Model ID:%04X - Element Index:%d" % (model_id, elem_index) +
-                    " - Client Address:%04X - Server Address:%04X - Application Key Index:%d" % (client_address, server_address, appkey_index) +
-                    transition_str +
-                    delay_str +
-                    flags_str +
-                    type_str +
-                    " - Value:%s" % (hexlify(value[::-1]).decode('ascii').upper(), ))
+                          " - Client Address:%04X - Server Address:%04X - Application Key Index:%d" % (client_address, server_address, appkey_index) +
+                          transition_str +
+                          delay_str +
+                          flags_str +
+                          type_str +
+                          " - Value:%s" % (hexlify(value[::-1]).decode('ascii').upper(), ))
     
     def ble_evt_mesh_generic_client_server_status(self, model_id, elem_index, client_address, server_address, remaining, flags, type, value):
         flags_str=''
