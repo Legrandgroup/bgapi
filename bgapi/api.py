@@ -344,7 +344,7 @@ class BlueGigaAPI(object):
         elif packet_class == 0x03:  # Message class: Generic Access Profile
             if packet_command == 0x00:
                 pass    #Ignore evt_le_gap_scan_response
-            if packet_command == 0x01:
+            elif packet_command == 0x01:
                 pass    #Ignore evt_le_gap_adv_timeout
             else:
                 logger.error('Unknown event ID 0x%02x for event in class Generic Access Profile' % packet_command)
