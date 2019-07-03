@@ -20,6 +20,7 @@ class BleMeshNode(object):
         self._modem_init_done = threading.Event()
         self._flash_erase_done = threading.Event()
         self._get_bt_address_done = threading.Event()
+        self._last_bt_address = None
         self._provisioning_occurred = threading.Event()
         if bgapi_handler is not None:
             self._bgapi=bgapi_handler
@@ -46,10 +47,15 @@ class BleMeshNode(object):
     
     def get_bt_address(self, timeout=1):
         self._get_bt_address_done.clear()
+        self._last_bt_address = None
         self._bgapi.ble_cmd_system_get_bt_address()
         if not self._get_bt_address_done.wait(timeout):
             self._logger.error('Get BT address timed out')
-            #raise Exception('Get BT address timed out')
+            raise Exception('Get BT address timed out')
+        else:
+            bt_address = self._last_bt_address
+            self._last_bt_address = None
+            return bt_address
     
     def start_advertising_unprovisioned(self):
         self._provisioning_occurred.clear()
@@ -82,6 +88,7 @@ class BleMeshNode(object):
     def ble_rsp_system_get_bt_address(self, address):
         address = ':'.join([ '%02X' % ord(b) for b in address ])
         self._logger.info('RSP-Bt Address [%s]' % address)
+        self._last_bt_address = address # Record the address we just got, it will be used by blocking method get_bt_address()
         self._get_bt_address_done.set()
 
     def ble_rsp_system_reg_write(self, result):
@@ -551,7 +558,7 @@ def example_ble_mesh_node():
     btmesh=BleMeshNode(port=PORT, baud=57600)
     btmesh.flash_erase()
     btmesh.modem_reset()
-    btmesh.get_bt_address()
+    logger.info('Out Bluetooth addess is:' + str(btmesh.get_bt_address()))
     
     btmesh._bgapi.ble_cmd_gatt_server_write_attribute_value(11, 0, 'fake node') # see app.c#L110 gattdb_device_name==11
     time.sleep(1)
