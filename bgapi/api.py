@@ -302,7 +302,7 @@ class BlueGigaAPI(object):
         elif packet_class == 0x14:  # Message class: Mesh Node
             if packet_command == 0x00:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Mesh Node Init [%s]' % (RESULT_CODE[result]))
+                callbacks.ble_rsp_mesh_node_init(result)
             elif packet_command == 0x01:
                 result = struct.unpack('<H', rx_payload[:2])[0]
                 logger.info('RSP-Start sending Unprovisioned Device Beacons [%s]' % (RESULT_CODE[result]))
@@ -317,7 +317,7 @@ class BlueGigaAPI(object):
                 logger.info('RSP-Mesh Generic Server Publish [%s]' % (RESULT_CODE[result]))
             elif packet_command == 0x04:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Mesh Generic Server Init [%s]' % (RESULT_CODE[result]))
+                callbacks.ble_rsp_mesh_generic_server_init(result)
             else:
                 logger.error('Unknown response message ID 0x%02x class Mesh Generic Server Model' % packet_command)
         elif packet_class == 0x1e:  # Message class: Bluetooth Mesh Generic Client Model
@@ -326,7 +326,7 @@ class BlueGigaAPI(object):
                 logger.info('RSP-Mesh Generic Client Publish [%s]' % (RESULT_CODE[result]))
             elif packet_command == 0x04:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                logger.info('RSP-Mesh Generic Client Init [%s]' % (RESULT_CODE[result]))
+                callbacks.ble_rsp_mesh_generic_client_init(result)
             else:
                 logger.error('Unknown response message ID 0x%02x class Mesh Generic Client Model' % packet_command)
         else:
@@ -490,6 +490,15 @@ class BlueGigaCallbacks(object):
 
     def ble_rsp_flash_write_words(self):
         logger.info("RSP-Flash Write Words")
+
+    def ble_rsp_mesh_node_init(self, result):
+        logger.info('RSP-Mesh Node Init [%s]' % (RESULT_CODE[result]))
+
+    def ble_rsp_mesh_generic_server_init(self, result):
+        logger.info('RSP-Mesh Generic Server Init [%s]' % (RESULT_CODE[result]))
+
+    def ble_rsp_mesh_generic_client_init(self, result):
+        logger.info('RSP-Mesh Generic Client Init [%s]' % (RESULT_CODE[result]))
 
     def ble_rsp_attributes_write(self, result):
         logger.info("RSP-Attributes Write: [%s]" %  RESULT_CODE[result])
