@@ -50,6 +50,9 @@ class BleMeshNode(object):
             self._logger.error('Get BT address timed out')
             #raise Exception('Get BT address timed out')
     
+    def wait_provisioned(self, timeout=0):
+        pass
+    
     def ble_rsp_system_reset(self):
         self._logger.info("RSP-System Reset")
     
@@ -542,6 +545,9 @@ def example_ble_mesh_node():
     time.sleep(1)
     # Then run gecko_cmd_mesh_node_start_unprov_beaconing(0x3) as done below
     btmesh._bgapi.ble_cmd_mesh_node_start_unprov_beaconing(1 | 2)
+    logger.info('Waiting to be provisioned...')
+    btmesh.wait_provisioned(timeout=0)
+    logger.info('We have just been provisioned!')
     logger.info('Loop sending commands in 120s')
     time.sleep(30)
     logger.info('Loop sending commands in 90s')
