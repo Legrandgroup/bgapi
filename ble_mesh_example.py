@@ -145,8 +145,12 @@ def example_ble_mesh_node():
     
     logger=api_logger
     
+    decommission_node = False   # Set this to True if you want to force the node out of its (possibly) currently commissionned BLE mesh network
+    
     btmesh=BleMeshNode(port=PORT, baud=57600)
-    btmesh.flash_erase()
+    if decommission_node:
+        btmesh.flash_erase()
+    
     btmesh.modem_reset()
     logger.info('Our Bluetooth address is:' + str(btmesh.get_bt_address()))
     
@@ -155,10 +159,13 @@ def example_ble_mesh_node():
     btmesh._bgapi.ble_cmd_mesh_node_set_adv_event_filter(0,'') # see main.c#L284    (was 0x07)
     time.sleep(0.5)
     btmesh.mesh_node_init()
-    btmesh.start_advertising_unprovisioned()
-    logger.info('Waiting to be provisioned...')
-    btmesh.wait_provisioned()
-    logger.info('We have just been provisioned!')
+    
+    if decommission_node:
+        btmesh.start_advertising_unprovisioned()
+        logger.info('Waiting to be provisioned...')
+        btmesh.wait_provisioned()
+        logger.info('We have just been provisioned!')
+    
     logger.info('Loop sending commands in 120s')
     time.sleep(30)
     logger.info('Loop sending commands in 90s')
